@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from retail_forecast_etl.config import Settings, get_settings
 from retail_forecast_etl.ingestion import ingest_kaggle_dataset
 from retail_forecast_etl.processing import process_raw_data
