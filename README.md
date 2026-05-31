@@ -89,15 +89,16 @@ See `.env.example` for defaults suitable for local Docker development.
 
 - Python package smoke check: `python -m retail_forecast_etl`
 - Kaggle ingestion: `python -m retail_forecast_etl.ingestion`
+- Process raw CSVs: `python -m retail_forecast_etl.processing`
+- Validate processed outputs: `python -m retail_forecast_etl.validation`
 - Airflow DAG scaffold: `dags/retail_sales_etl.py`
 - Streamlit scaffold: `streamlit run streamlit_app/app.py`
 
-The ingestion step uses `kagglehub.dataset_download()` to download the configured Kaggle dataset, then copies the downloaded files into `data/raw/`, reusing existing raw files when possible. For the default public dataset, Kaggle credentials can be left blank; set `KAGGLE_USERNAME` and `KAGGLE_KEY` if the dataset you configure requires authenticated access. Later ETL layer functions intentionally raise `NotImplementedError` until their feature briefs are implemented.
+The ingestion step uses `kagglehub.dataset_download()` to download the configured Kaggle dataset, then copies the downloaded files into `data/raw/`, reusing existing raw files when possible. For the default public dataset, Kaggle credentials can be left blank; set `KAGGLE_USERNAME` and `KAGGLE_KEY` if the dataset you configure requires authenticated access. Processing writes analytics-ready CSVs to `data/processed/`. Validation writes JSON reports to `data/validation/` and raises on critical schema or data quality failures so Airflow can stop downstream loading. Later warehouse and dashboard functions intentionally raise `NotImplementedError` until their feature briefs are implemented.
 
 ## Planned Feature Work
 
 - Pandas processing and forecasting feature generation into `data/processed/`
-- Pydantic models and Great Expectations checks before warehouse loads
 - Explicit PostgreSQL analytics tables and loading strategy
 - Airflow task execution for the full pipeline
 - Streamlit KPIs, trends, filters, and data freshness views
