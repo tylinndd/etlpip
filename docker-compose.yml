@@ -1,3 +1,44 @@
+x-project-environment: &project-environment
+  ENVIRONMENT: ${ENVIRONMENT:-local}
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  KAGGLE_DATASET_SLUG: ${KAGGLE_DATASET_SLUG:-noopurbhatt/retail-store-sales-forecasting-dataset}
+  KAGGLE_USERNAME: ${KAGGLE_USERNAME:-}
+  KAGGLE_KEY: ${KAGGLE_KEY:-}
+  KAGGLE_CONFIG_DIR: ${KAGGLE_CONFIG_DIR:-.kaggle}
+  KAGGLEHUB_CACHE: ${KAGGLEHUB_CACHE:-.kagglehub}
+  RAW_DATA_DIR: ${RAW_DATA_DIR:-data/raw}
+  PROCESSED_DATA_DIR: ${PROCESSED_DATA_DIR:-data/processed}
+  VALIDATION_OUTPUT_DIR: ${VALIDATION_OUTPUT_DIR:-data/validation}
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: ${POSTGRES_DB:-retail_sales}
+  POSTGRES_USER: ${POSTGRES_USER:-retail_user}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-retail_password}
+  POSTGRES_SCHEMA: ${POSTGRES_SCHEMA:-analytics}
+
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.9.3-python3.11
+  depends_on:
+    postgres:
+      condition: service_healthy
+  environment:
+    <<: *project-environment
+    AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR:-LocalExecutor}
+    AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES:-false}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: ${AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION:-true}
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN:-postgresql+psycopg2://retail_user:retail_password@postgres:5432/airflow}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY:-local-dev-secret-key}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${AIRFLOW_PIP_ADDITIONAL_REQUIREMENTS:-pandas python-dotenv pydantic pydantic-settings kaggle kagglehub great-expectations psycopg2-binary}
+    PYTHONPATH: /opt/airflow/src
+  user: "${AIRFLOW_UID:-50000}:0"
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./src:/opt/airflow/src
+    - ./data:/opt/airflow/data
+    - kaggle_config:/opt/airflow/.kaggle
+    - kagglehub_cache:/opt/airflow/.kagglehub
+
 services:
   postgres:
     image: postgres:16
@@ -6,7 +47,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-retail_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-retail_password}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./sql:/docker-entrypoint-initdb.d:ro
@@ -17,87 +58,72 @@ services:
       retries: 5
 
   airflow-init:
-    image: apache/airflow:2.9.3-python3.11
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR:-LocalExecutor}
-      AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES:-false}
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
-      _PIP_ADDITIONAL_REQUIREMENTS: pandas python-dotenv pydantic-settings kaggle kagglehub great-expectations psycopg2-binary
-      PYTHONPATH: /opt/airflow/src
-    user: "${AIRFLOW_UID:-50000}:0"
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./src:/opt/airflow/src
-      - ./data:/opt/airflow/data
+    <<: *airflow-common
     command: >
       bash -c "airflow db migrate &&
-      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true"
+      (airflow users create
+      --username $${AIRFLOW_ADMIN_USERNAME:-admin}
+      --password $${AIRFLOW_ADMIN_PASSWORD:-admin}
+      --firstname $${AIRFLOW_ADMIN_FIRSTNAME:-Admin}
+      --lastname $${AIRFLOW_ADMIN_LASTNAME:-User}
+      --role Admin
+      --email $${AIRFLOW_ADMIN_EMAIL:-admin@example.com} || true)"
+    restart: "no"
 
   airflow-webserver:
-    image: apache/airflow:2.9.3-python3.11
+    <<: *airflow-common
     depends_on:
       airflow-init:
         condition: service_completed_successfully
-    env_file:
-      - .env
-    environment:
-      AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR:-LocalExecutor}
-      AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES:-false}
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
-      _PIP_ADDITIONAL_REQUIREMENTS: pandas python-dotenv pydantic-settings kaggle kagglehub great-expectations psycopg2-binary
-      PYTHONPATH: /opt/airflow/src
-    user: "${AIRFLOW_UID:-50000}:0"
     ports:
-      - "8080:8080"
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./src:/opt/airflow/src
-      - ./data:/opt/airflow/data
+      - "${AIRFLOW_WEBSERVER_PORT:-8080}:8080"
     command: webserver
 
   airflow-scheduler:
-    image: apache/airflow:2.9.3-python3.11
+    <<: *airflow-common
     depends_on:
       airflow-init:
         condition: service_completed_successfully
-    env_file:
-      - .env
-    environment:
-      AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR:-LocalExecutor}
-      AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES:-false}
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
-      _PIP_ADDITIONAL_REQUIREMENTS: pandas python-dotenv pydantic-settings kaggle kagglehub great-expectations psycopg2-binary
-      PYTHONPATH: /opt/airflow/src
-    user: "${AIRFLOW_UID:-50000}:0"
-    volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./src:/opt/airflow/src
-      - ./data:/opt/airflow/data
     command: scheduler
+
+  etl:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *project-environment
+      PYTHONPATH: /app/src
+    volumes:
+      - ./data:/app/data
+      - ./src:/app/src
+      - kaggle_config:/app/.kaggle
+      - kagglehub_cache:/app/.kagglehub
+    command: python -m retail_forecast_etl
 
   streamlit:
     build: .
     depends_on:
       postgres:
         condition: service_healthy
-    env_file:
-      - .env
     environment:
+      <<: *project-environment
       PYTHONPATH: /app/src
+      STREAMLIT_SERVER_PORT: ${STREAMLIT_SERVER_PORT:-8501}
     ports:
-      - "8501:8501"
+      - "${STREAMLIT_SERVER_PORT:-8501}:8501"
     volumes:
       - ./streamlit_app:/app/streamlit_app
       - ./src:/app/src
-    command: streamlit run streamlit_app/app.py --server.port ${STREAMLIT_SERVER_PORT:-8501} --server.address 0.0.0.0
+      - ./data:/app/data:ro
+    command: streamlit run streamlit_app/app.py --server.port 8501 --server.address 0.0.0.0
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8501/_stcore/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 volumes:
   postgres_data:
+  kaggle_config:
+  kagglehub_cache:

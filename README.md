@@ -64,13 +64,26 @@ Kaggle API
    pip install -e .
    ```
 
-4. Start the local stack:
+4. Start the local Docker stack:
 
    ```bash
    docker compose up --build
    ```
 
 Airflow will be available at `http://localhost:8080` and Streamlit at `http://localhost:8501`.
+PostgreSQL is exposed on `localhost:5432`.
+
+5. Run the ETL pipeline manually from the app container when needed:
+
+   ```bash
+   docker compose run --rm etl python -m retail_forecast_etl.ingestion
+   docker compose run --rm etl python -m retail_forecast_etl.processing
+   docker compose run --rm etl python -m retail_forecast_etl.validation
+   docker compose run --rm etl python -m retail_forecast_etl.warehouse
+   ```
+
+   The same workflow can also be run from Airflow by enabling and triggering the
+   `retail_sales_forecasting_etl` DAG.
 
 ## Configuration
 
@@ -81,9 +94,49 @@ Required values for future feature implementations:
 - `KAGGLE_DATASET_SLUG`, `KAGGLE_USERNAME`, `KAGGLE_KEY`
 - `RAW_DATA_DIR`, `PROCESSED_DATA_DIR`, `VALIDATION_OUTPUT_DIR`
 - `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_SCHEMA`
-- `AIRFLOW__DATABASE__SQL_ALCHEMY_CONN`
+- `AIRFLOW__DATABASE__SQL_ALCHEMY_CONN`, `AIRFLOW_ADMIN_USERNAME`, `AIRFLOW_ADMIN_PASSWORD`
+- `STREAMLIT_SERVER_PORT`
 
 See `.env.example` for defaults suitable for local Docker development.
+
+## Docker Services
+
+The Compose environment starts the local dependencies needed by the PRD:
+
+- `postgres`: PostgreSQL 16 warehouse, initialized with `sql/001_create_analytics_schema.sql`.
+- `airflow-init`: one-time Airflow metadata migration and admin user creation.
+- `airflow-webserver`: Airflow UI on `http://localhost:8080`.
+- `airflow-scheduler`: Airflow DAG scheduler for `dags/retail_sales_etl.py`.
+- `etl`: Python app image for one-off ETL commands.
+- `streamlit`: dashboard UI on `http://localhost:8501`.
+
+The stack uses named Docker volumes for persistent PostgreSQL state and Kaggle cache
+data:
+
+- `postgres_data` -> `/var/lib/postgresql/data`
+- `kaggle_config` -> container-local `.kaggle`
+- `kagglehub_cache` -> container-local `.kagglehub`
+
+Project directories are bind-mounted for local development:
+
+- `./dags` -> Airflow DAG discovery
+- `./logs` -> Airflow task logs
+- `./src` -> ETL package code
+- `./data` -> raw, processed, and validation artifacts
+- `./streamlit_app` -> Streamlit app code
+
+## Service Connectivity
+
+Containers connect to PostgreSQL through the Compose service DNS name `postgres` on
+port `5432`. Local tools can connect through `localhost:${POSTGRES_PORT:-5432}`.
+
+Default local database endpoints:
+
+- Warehouse: `postgresql+psycopg2://retail_user:retail_password@postgres:5432/retail_sales`
+- Airflow metadata: `postgresql+psycopg2://retail_user:retail_password@postgres:5432/airflow`
+
+Use `POSTGRES_HOST=postgres` inside Docker services. Use `POSTGRES_HOST=localhost`
+only when running the Python app directly from the host against the Compose database.
 
 ## Current Entrypoints
 

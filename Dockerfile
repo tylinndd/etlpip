@@ -11,6 +11,7 @@ RUN apt-get update \
 
 COPY requirements.txt pyproject.toml README.md ./
 COPY src ./src
+COPY streamlit_app ./streamlit_app
 
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt \

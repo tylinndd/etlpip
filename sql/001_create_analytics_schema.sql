@@ -1,4 +1,4 @@
-CREATE DATABASE airflow OWNER retail_user;
+CREATE DATABASE airflow;
 
 CREATE SCHEMA IF NOT EXISTS analytics;
 
