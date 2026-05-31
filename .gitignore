@@ -5,6 +5,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+*.db
 
 # Local data and runtime outputs
 data/raw/*

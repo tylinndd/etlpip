@@ -91,15 +91,15 @@ See `.env.example` for defaults suitable for local Docker development.
 - Kaggle ingestion: `python -m retail_forecast_etl.ingestion`
 - Process raw CSVs: `python -m retail_forecast_etl.processing`
 - Validate processed outputs: `python -m retail_forecast_etl.validation`
+- Load warehouse tables: `python -m retail_forecast_etl.warehouse`
 - Airflow DAG scaffold: `dags/retail_sales_etl.py`
 - Streamlit scaffold: `streamlit run streamlit_app/app.py`
 
-The ingestion step uses `kagglehub.dataset_download()` to download the configured Kaggle dataset, then copies the downloaded files into `data/raw/`, reusing existing raw files when possible. For the default public dataset, Kaggle credentials can be left blank; set `KAGGLE_USERNAME` and `KAGGLE_KEY` if the dataset you configure requires authenticated access. Processing writes analytics-ready CSVs to `data/processed/`. Validation writes JSON reports to `data/validation/` and raises on critical schema or data quality failures so Airflow can stop downstream loading. Later warehouse and dashboard functions intentionally raise `NotImplementedError` until their feature briefs are implemented.
+The ingestion step uses `kagglehub.dataset_download()` to download the configured Kaggle dataset, then copies the downloaded files into `data/raw/`, reusing existing raw files when possible. For the default public dataset, Kaggle credentials can be left blank; set `KAGGLE_USERNAME` and `KAGGLE_KEY` if the dataset you configure requires authenticated access. Processing writes analytics-ready CSVs to `data/processed/`. Validation writes JSON reports to `data/validation/` and raises on critical schema or data quality failures so Airflow can stop downstream loading. Warehouse loading uses env-based PostgreSQL config, creates explicit `analytics` tables and indexes, requires successful validation reports, and performs replace-mode loads. Later dashboard functions intentionally raise `NotImplementedError` until their feature briefs are implemented.
 
 ## Planned Feature Work
 
 - Pandas processing and forecasting feature generation into `data/processed/`
-- Explicit PostgreSQL analytics tables and loading strategy
 - Airflow task execution for the full pipeline
 - Streamlit KPIs, trends, filters, and data freshness views
 
