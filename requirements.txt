@@ -1,0 +1,22 @@
+# Core ETL
+pandas
+python-dotenv
+pydantic
+pydantic-settings
+kaggle
+
+# Validation
+great-expectations
+
+# Warehouse
+SQLAlchemy
+psycopg2-binary
+
+# Orchestration and dashboard
+apache-airflow
+streamlit
+plotly
+
+# Development
+pytest
+ruff
