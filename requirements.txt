@@ -4,6 +4,7 @@ python-dotenv
 pydantic
 pydantic-settings
 kaggle
+kagglehub
 
 # Validation
 great-expectations

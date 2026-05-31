@@ -2,7 +2,7 @@
 
 Production-style scaffold for a retail sales forecasting ETL pipeline. The project is designed to ingest Kaggle datasets, process and validate them, load analytics-ready tables into PostgreSQL, orchestrate the workflow with Airflow, and serve a Streamlit dashboard.
 
-This repository currently contains the foundation only. Feature logic for Kaggle download, transformations, Great Expectations suites, warehouse loads, and dashboard charts will be implemented in follow-up work.
+This repository currently contains the foundation plus Kaggle data ingestion. Feature logic for transformations, Great Expectations suites, warehouse loads, and dashboard charts will be implemented in follow-up work.
 
 ## Product Docs
 
@@ -88,14 +88,14 @@ See `.env.example` for defaults suitable for local Docker development.
 ## Current Entrypoints
 
 - Python package smoke check: `python -m retail_forecast_etl`
+- Kaggle ingestion: `python -m retail_forecast_etl.ingestion`
 - Airflow DAG scaffold: `dags/retail_sales_etl.py`
 - Streamlit scaffold: `streamlit run streamlit_app/app.py`
 
-The ETL layer functions intentionally raise `NotImplementedError` until each feature brief is implemented.
+The ingestion step uses `kagglehub.dataset_download()` to download the configured Kaggle dataset, then copies the downloaded files into `data/raw/`, reusing existing raw files when possible. For the default public dataset, Kaggle credentials can be left blank; set `KAGGLE_USERNAME` and `KAGGLE_KEY` if the dataset you configure requires authenticated access. Later ETL layer functions intentionally raise `NotImplementedError` until their feature briefs are implemented.
 
 ## Planned Feature Work
 
-- Kaggle ingestion into `data/raw/`
 - Pandas processing and forecasting feature generation into `data/processed/`
 - Pydantic models and Great Expectations checks before warehouse loads
 - Explicit PostgreSQL analytics tables and loading strategy

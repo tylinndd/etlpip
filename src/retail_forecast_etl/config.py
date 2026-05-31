@@ -13,15 +13,20 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        populate_by_name=True,
     )
 
     environment: str = Field(default="local", alias="ENVIRONMENT")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
-    kaggle_dataset_slug: str = Field(default="", alias="KAGGLE_DATASET_SLUG")
+    kaggle_dataset_slug: str = Field(
+        default="noopurbhatt/retail-store-sales-forecasting-dataset",
+        alias="KAGGLE_DATASET_SLUG",
+    )
     kaggle_username: str = Field(default="", alias="KAGGLE_USERNAME")
     kaggle_key: str = Field(default="", alias="KAGGLE_KEY")
     kaggle_config_dir: Path = Field(default=Path(".kaggle"), alias="KAGGLE_CONFIG_DIR")
+    kagglehub_cache_dir: Path = Field(default=Path(".kagglehub"), alias="KAGGLEHUB_CACHE")
 
     raw_data_dir: Path = Field(default=Path("data/raw"), alias="RAW_DATA_DIR")
     processed_data_dir: Path = Field(default=Path("data/processed"), alias="PROCESSED_DATA_DIR")

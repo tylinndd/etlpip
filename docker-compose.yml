@@ -27,7 +27,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR:-LocalExecutor}
       AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES:-false}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
-      _PIP_ADDITIONAL_REQUIREMENTS: pandas python-dotenv pydantic-settings kaggle great-expectations psycopg2-binary
+      _PIP_ADDITIONAL_REQUIREMENTS: pandas python-dotenv pydantic-settings kaggle kagglehub great-expectations psycopg2-binary
       PYTHONPATH: /opt/airflow/src
     user: "${AIRFLOW_UID:-50000}:0"
     volumes:
@@ -50,7 +50,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR:-LocalExecutor}
       AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES:-false}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
-      _PIP_ADDITIONAL_REQUIREMENTS: pandas python-dotenv pydantic-settings kaggle great-expectations psycopg2-binary
+      _PIP_ADDITIONAL_REQUIREMENTS: pandas python-dotenv pydantic-settings kaggle kagglehub great-expectations psycopg2-binary
       PYTHONPATH: /opt/airflow/src
     user: "${AIRFLOW_UID:-50000}:0"
     ports:
@@ -73,7 +73,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR:-LocalExecutor}
       AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES:-false}
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
-      _PIP_ADDITIONAL_REQUIREMENTS: pandas python-dotenv pydantic-settings kaggle great-expectations psycopg2-binary
+      _PIP_ADDITIONAL_REQUIREMENTS: pandas python-dotenv pydantic-settings kaggle kagglehub great-expectations psycopg2-binary
       PYTHONPATH: /opt/airflow/src
     user: "${AIRFLOW_UID:-50000}:0"
     volumes:
